@@ -1,77 +1,79 @@
-# SwiftDefaultApps (moderno)
+# SwiftDefaultApps (modern)
 
-Ver y cambiar las **aplicaciones por defecto** de macOS para cualquier esquema de URL (`http`, `mailto`, `ssh`…) o tipo de archivo (`.md`, `public.plain-text`…), con una app gráfica o desde la terminal.
+View and change the **default applications** on macOS for any URL scheme (`http`, `mailto`, `ssh`…) or file type (`.md`, `public.plain-text`…), from a graphical app or the command line.
 
-Es una reimplementación desde cero, para macOS moderno, de [SwiftDefaultApps](https://github.com/Lord-Kamina/SwiftDefaultApps) de Gregorio Litenstein. El original (v2.0.1, 2019) ya no funciona en las Mac actuales:
+This is a from-scratch reimplementation, for modern macOS, of [SwiftDefaultApps](https://github.com/Lord-Kamina/SwiftDefaultApps) by Gregorio Litenstein. The original (v2.0.1, 2019) no longer works on current Macs:
 
-- sus binarios son solo Intel (`x86_64`) y fallan con `bad CPU type in executable` en Apple Silicon sin Rosetta;
-- era un panel `.prefPane`, y Configuración del Sistema (macOS 13+) ya no admite bien paneles de terceros.
+- its binaries are Intel-only (`x86_64`) and fail with `bad CPU type in executable` on Apple Silicon without Rosetta;
+- it was a `.prefPane`, and System Settings (macOS 13+) no longer properly supports third-party preference panes.
 
-Esta versión es nativa para **Apple Silicon e Intel** (binario universal), usa las APIs actuales de `NSWorkspace`/`UniformTypeIdentifiers` y se distribuye como **app independiente** en vez de panel.
+This version runs natively on **Apple Silicon and Intel** (universal binary), uses the current `NSWorkspace`/`UniformTypeIdentifiers` APIs, and ships as a **standalone app** instead of a preference pane.
 
-## Requisitos
+## Requirements
 
-- macOS 13 Ventura o posterior.
-- Para compilar: Xcode 15+ (Swift 5.9+).
+- macOS 13 Ventura or later.
+- To build: Xcode 15+ (Swift 5.9+).
 
-## Instalación
+## Installation
 
-### Desde el release
+### From the release
 
-1. Descarga `SwiftDefaultApps-<versión>.zip` de [Releases](../../releases).
-2. Descomprime y arrastra `SwiftDefaultApps.app` a `/Applications`.
-3. La app está firmada ad hoc (no notarizada): la primera vez ábrela con **clic derecho → Abrir**, o ejecuta:
+1. Download `SwiftDefaultApps-<version>.zip` from [Releases](../../releases).
+2. Unzip it and drag `SwiftDefaultApps.app` to `/Applications`.
+3. The app is ad-hoc signed (not notarized): the first time, open it with **right-click → Open**, or run:
 
    ```bash
    xattr -dr com.apple.quarantine /Applications/SwiftDefaultApps.app
    ```
 
-El CLI viene dentro de la app y también como descarga aparte (`swda-<versión>.zip`). Para tenerlo en el `PATH`:
+The CLI is bundled inside the app and is also available as a separate download (`swda-<version>.zip`). To put it on your `PATH`:
 
 ```bash
 sudo ln -sf /Applications/SwiftDefaultApps.app/Contents/Resources/swda /usr/local/bin/swda
 ```
 
-### Desde el código
+### From source
 
 ```bash
-git clone <url-de-este-repo>
-cd <repo>
+git clone https://github.com/Dr4CuK30/SwiftDefaultApps-Modern.git
+cd SwiftDefaultApps-Modern
 ./build-app.sh
 ```
 
-Genera `build/SwiftDefaultApps.app` y `./swda`.
+This produces `build/SwiftDefaultApps.app`, `./swda`, and the release zips in `dist/`.
 
-## La app
+## The app
 
-Tres secciones en la barra lateral:
+Three sections in the sidebar:
 
-| Sección | Qué hace |
+| Section | What it does |
 | --- | --- |
-| **Esquemas de URL** | Lista todos los esquemas conocidos por LaunchServices con su app actual. Elige otra en "Abrir con" o con "Otra aplicación…". |
-| **Tipos de archivo** | Lo mismo para UTIs, con su descripción y extensión. Permite elegir el rol (Visor, Editor, Shell o Todos). |
-| **Aplicaciones** | Para cada app instalada, muestra qué esquemas y tipos declara, cuáles abre ya y un botón "Usar esta app" para el resto. |
+| **URL schemes** | Lists every scheme known to LaunchServices along with its current app. Pick another one under "Open with" or via "Other application…". |
+| **File types** | The same for UTIs, with their description and extension. Lets you choose the role (Viewer, Editor, Shell, or All). |
+| **Applications** | For each installed app, shows which schemes and types it declares, which ones it already opens, and a "Use this app" button for the rest. |
 
-Todas las listas tienen buscador. El botón **Recargar** vuelve a leer LaunchServices.
+Every list is searchable. The **Reload** button re-reads LaunchServices.
 
-> Al cambiar el navegador (`http`/`https`), macOS muestra un diálogo de confirmación propio. Es una restricción del sistema.
+> When you change the browser (`http`/`https`), macOS shows its own confirmation dialog. This is a system restriction.
 
-## El CLI: `swda`
+> The app's interface is currently in Spanish.
 
-Compatible con los comandos del `swda` original:
+## The CLI: `swda`
+
+Compatible with the commands of the original `swda`:
 
 ```text
-swda getSchemes                        Lista esquemas de URL y su app por defecto
-swda getUTIs                           Lista UTIs y su app por defecto
-swda getApps                           Lista las apps registradas en LaunchServices
-swda getHandler <tipo> [--role R] [--all]
-swda setHandler <tipo> --app <app> [--role R]
+swda getSchemes                        List URL schemes and their default app
+swda getUTIs                           List UTIs and their default app
+swda getApps                           List apps registered with LaunchServices
+swda getHandler <type> [--role R] [--all]
+swda setHandler <type> --app <app> [--role R]
 ```
 
-`<tipo>` puede ser `--URL <esquema>`, `--UTI <uti>`, `--ext <extensión>` o un atajo: `--browser`, `--mail`, `--ftp`, `--rss`, `--news`.
-`<app>` puede ser un nombre, un bundle id o la ruta a un `.app`.
+`<type>` can be `--URL <scheme>`, `--UTI <uti>`, `--ext <extension>`, or a shortcut: `--browser`, `--mail`, `--ftp`, `--rss`, `--news`.
+`<app>` can be a name, a bundle ID, or a path to a `.app`.
 
-Ejemplos:
+Examples:
 
 ```bash
 swda getHandler --browser
@@ -81,24 +83,24 @@ swda setHandler --mail --app com.apple.mail
 swda setHandler --UTI public.plain-text --role Editor --app TextEdit
 ```
 
-### Diferencias con el original
+### Differences from the original
 
-- Nuevo `--ext` para indicar una extensión en lugar de un UTI.
-- `--app` acepta nombre, bundle id o ruta.
-- `--app None` ya no está soportado: macOS moderno elimina las asociaciones a apps "vacías", así que la app *ThisAppDoesNothing* del original no tiene equivalente.
+- New `--ext` option to pass a file extension instead of a UTI.
+- `--app` accepts a name, bundle ID, or path.
+- `--app None` is no longer supported: modern macOS removes associations to "empty" apps, so the original's *ThisAppDoesNothing* helper has no equivalent.
 
-## Estructura
+## Project layout
 
 ```text
 Sources/
-  DefaultAppsCore/   Lógica compartida sobre LaunchServices
+  DefaultAppsCore/   Shared LaunchServices logic
   swda/              CLI
-  SwiftDefaultApps/  App SwiftUI
-build-app.sh         Compila ambos como binarios universales y arma el .app
+  SwiftDefaultApps/  SwiftUI app
+build-app.sh         Builds both as universal binaries, assembles the .app and the release zips
 ```
 
-## Créditos y licencia
+## Credits and license
 
-Idea y diseño de comandos basados en [SwiftDefaultApps](https://github.com/Lord-Kamina/SwiftDefaultApps) de Gregorio Litenstein, a su vez inspirado en RCDefaultApp de Carl Lindberg. El código de este repositorio es nuevo.
+Concept and command design based on [SwiftDefaultApps](https://github.com/Lord-Kamina/SwiftDefaultApps) by Gregorio Litenstein, itself inspired by Carl Lindberg's RCDefaultApp. The code in this repository is new.
 
-Licencia [MIT](LICENSE).
+Licensed under the [MIT License](LICENSE).
