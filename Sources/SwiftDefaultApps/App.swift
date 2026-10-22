@@ -1,5 +1,5 @@
-// SwiftDefaultApps — app independiente (reemplazo del antiguo .prefPane) para ver y cambiar
-// las aplicaciones por defecto de esquemas de URL y tipos de archivo.
+// SwiftDefaultApps — standalone app (replacing the old .prefPane) to view and change
+// the default applications for URL schemes and file types.
 
 import AppKit
 import DefaultAppsCore
@@ -20,12 +20,12 @@ struct SwiftDefaultAppsApp: App {
     }
 }
 
-// MARK: - Modelo
+// MARK: - Model
 
 enum Pane: String, CaseIterable, Identifiable {
-    case schemes = "Esquemas de URL"
-    case types = "Tipos de archivo"
-    case apps = "Aplicaciones"
+    case schemes = "URL Schemes"
+    case types = "File Types"
+    case apps = "Applications"
 
     var id: String { rawValue }
 
@@ -131,14 +131,14 @@ enum HandlerKind: Hashable {
 
 func roleName(_ role: Role) -> String {
     switch role {
-    case .all: return "Todos"
-    case .viewer: return "Visor"
+    case .all: return "All"
+    case .viewer: return "Viewer"
     case .editor: return "Editor"
     case .shell: return "Shell"
     }
 }
 
-// MARK: - Vistas
+// MARK: - Views
 
 struct ContentView: View {
     @EnvironmentObject private var model: Model
@@ -155,7 +155,7 @@ struct ContentView: View {
         } content: {
             Group {
                 if model.isLoading {
-                    ProgressView("Leyendo LaunchServices…")
+                    ProgressView("Reading LaunchServices…")
                 } else if let error = model.loadError {
                     Text(error).foregroundStyle(.red).padding()
                 } else {
@@ -163,7 +163,7 @@ struct ContentView: View {
                 }
             }
             .navigationSplitViewColumnWidth(min: 320, ideal: 400)
-            .searchable(text: $search, prompt: "Buscar")
+            .searchable(text: $search, prompt: "Search")
         } detail: {
             detail
         }
@@ -175,7 +175,7 @@ struct ContentView: View {
             Button {
                 Task { await model.load() }
             } label: {
-                Label("Recargar", systemImage: "arrow.clockwise")
+                Label("Reload", systemImage: "arrow.clockwise")
             }
             .disabled(model.isLoading)
         }
@@ -206,7 +206,7 @@ struct ContentView: View {
             case .apps: AppDetail(appURL: URL(fileURLWithPath: selection)).id(selection)
             }
         } else {
-            Text("Selecciona un elemento de la lista").foregroundStyle(.secondary)
+            Text("Select an item from the list").foregroundStyle(.secondary)
         }
     }
 
@@ -246,7 +246,7 @@ struct EntryList: View {
                     AppIcon(url: app, size: 16)
                     Text(LaunchServices.appName(app)).foregroundStyle(.secondary).lineLimit(1)
                 } else {
-                    Text("Sin app").foregroundStyle(.tertiary)
+                    Text("No app").foregroundStyle(.tertiary)
                 }
             }
         }
@@ -278,7 +278,7 @@ struct StatusRow: View {
     }
 }
 
-/// Detalle de un esquema de URL o un UTI: permite elegir su app por defecto.
+/// Detail for a URL scheme or UTI: lets you choose its default app.
 struct HandlerDetail: View {
     let kind: HandlerKind
     @EnvironmentObject private var model: Model
@@ -294,7 +294,7 @@ struct HandlerDetail: View {
         return false
     }
 
-    /// Las rutas se usan como identidad para evitar diferencias de "/" final entre URLs.
+    /// Paths are used as identity to avoid trailing "/" differences between URLs.
     private var options: [String] {
         var list = candidates
         for path in [current, selected].compactMap({ $0 }) where !list.contains(path) {
@@ -306,20 +306,20 @@ struct HandlerDetail: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent(isUTI ? "UTI" : "Esquema", value: kind.name)
+                LabeledContent(isUTI ? "UTI" : "Scheme", value: kind.name)
                 if !kind.detail.isEmpty {
-                    LabeledContent("Descripción", value: kind.detail)
+                    LabeledContent("Description", value: kind.detail)
                 }
             }
-            Section("Aplicación por defecto") {
+            Section("Default Application") {
                 if isUTI {
-                    Picker("Rol", selection: $role) {
+                    Picker("Role", selection: $role) {
                         ForEach(Role.allCases) { Text(roleName($0)).tag($0) }
                     }
                 }
-                Picker("Abrir con", selection: $selected) {
+                Picker("Open with", selection: $selected) {
                     if current == nil {
-                        Text("Ninguna").tag(String?.none)
+                        Text("None").tag(String?.none)
                     }
                     ForEach(options, id: \.self) { path in
                         Label {
@@ -334,7 +334,7 @@ struct HandlerDetail: View {
                 HStack {
                     if busy { ProgressView().controlSize(.small) }
                     Spacer()
-                    Button("Otra aplicación…", action: chooseOther).disabled(busy)
+                    Button("Other Application…", action: chooseOther).disabled(busy)
                 }
             }
             if let status {
@@ -342,7 +342,7 @@ struct HandlerDetail: View {
             }
             if case .scheme(let scheme) = kind, ["http", "https"].contains(scheme) {
                 Section {
-                    Text("Al cambiar el navegador, macOS te pedirá confirmar el cambio en un diálogo del sistema.")
+                    Text("When you change the browser, macOS will ask you to confirm in a system dialog.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -371,8 +371,8 @@ struct HandlerDetail: View {
                 model.refresh(kind)
                 let name = LaunchServices.appName(app)
                 status = current == app.path
-                    ? StatusMessage(ok: true, text: "\(name) es ahora la app por defecto.")
-                    : StatusMessage(ok: false, text: "macOS no aceptó el cambio: puede que \(name) no declare soporte para este tipo, o que se cancelara la confirmación.")
+                    ? StatusMessage(ok: true, text: "\(name) is now the default app.")
+                    : StatusMessage(ok: false, text: "macOS didn't accept the change: \(name) may not declare support for this type, or the confirmation was canceled.")
             } catch {
                 reload()
                 status = StatusMessage(ok: false, text: error.localizedDescription)
@@ -385,14 +385,14 @@ struct HandlerDetail: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.applicationBundle]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.prompt = "Elegir"
+        panel.prompt = "Choose"
         if panel.runModal() == .OK, let url = panel.url {
             selected = url.path
         }
     }
 }
 
-/// Detalle de una aplicación: qué esquemas y tipos declara, y cuáles abre por defecto.
+/// Detail for an application: which schemes and types it declares, and which it opens by default.
 struct AppDetail: View {
     let appURL: URL
     @EnvironmentObject private var model: Model
@@ -409,7 +409,7 @@ struct AppDetail: View {
                     AppIcon(url: appURL, size: 48)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(LaunchServices.appName(appURL)).font(.title2.bold())
-                        Text(LaunchServices.bundleID(appURL) ?? "Sin bundle identifier").foregroundStyle(.secondary)
+                        Text(LaunchServices.bundleID(appURL) ?? "No bundle identifier").foregroundStyle(.secondary)
                         Text(appURL.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                     }
                 }
@@ -417,12 +417,12 @@ struct AppDetail: View {
             if let status {
                 Section { StatusRow(status: status) }
             }
-            Section("Esquemas de URL (\(schemes.count))") {
-                if schemes.isEmpty { Text("Ninguno").foregroundStyle(.secondary) }
+            Section("URL Schemes (\(schemes.count))") {
+                if schemes.isEmpty { Text("None").foregroundStyle(.secondary) }
                 ForEach(schemes, id: \.self, content: row)
             }
-            Section("Tipos de archivo (\(types.count))") {
-                if types.isEmpty { Text("Ninguno").foregroundStyle(.secondary) }
+            Section("File Types (\(types.count))") {
+                if types.isEmpty { Text("None").foregroundStyle(.secondary) }
                 ForEach(types, id: \.self, content: row)
             }
         }
@@ -442,11 +442,11 @@ struct AppDetail: View {
             }
             Spacer()
             if current == appURL.path {
-                Label("Por defecto", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                Label("Default", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
             } else {
-                Text(current.map { LaunchServices.appName(URL(fileURLWithPath: $0)) } ?? "Sin app")
+                Text(current.map { LaunchServices.appName(URL(fileURLWithPath: $0)) } ?? "No app")
                     .foregroundStyle(.secondary).lineLimit(1)
-                Button("Usar esta app") { apply(kind) }
+                Button("Use This App") { apply(kind) }
             }
         }
     }
@@ -469,8 +469,8 @@ struct AppDetail: View {
                 defaults[kind] = kind.defaultApp()?.path
                 model.refresh(kind)
                 status = defaults[kind] == appURL.path
-                    ? StatusMessage(ok: true, text: "\(LaunchServices.appName(appURL)) abre ahora \(kind.name).")
-                    : StatusMessage(ok: false, text: "macOS no aceptó el cambio para \(kind.name).")
+                    ? StatusMessage(ok: true, text: "\(LaunchServices.appName(appURL)) now opens \(kind.name).")
+                    : StatusMessage(ok: false, text: "macOS didn't accept the change for \(kind.name).")
             } catch {
                 status = StatusMessage(ok: false, text: error.localizedDescription)
             }

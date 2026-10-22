@@ -1,13 +1,13 @@
-// swda — reimplementación moderna (macOS 13+, Apple Silicon e Intel) del CLI de SwiftDefaultApps.
-// Comandos compatibles con el original: getSchemes, getUTIs, getApps, getHandler, setHandler.
+// swda — modern reimplementation (macOS 13+, Apple Silicon and Intel) of the SwiftDefaultApps CLI.
+// Commands compatible with the original: getSchemes, getUTIs, getApps, getHandler, setHandler.
 
 import DefaultAppsCore
 import Foundation
 import UniformTypeIdentifiers
 
-let version = "3.0.0"
+let version = "3.0.1"
 
-// MARK: - Salida y errores
+// MARK: - Output and errors
 
 func fail(_ message: String) -> Never {
     FileHandle.standardError.write(Data("swda ERROR: \(message)\n".utf8))
@@ -20,33 +20,33 @@ func attempt<T>(_ body: () throws -> T) -> T {
 
 func printUsage() {
     print("""
-    swda \(version) — Utilidad para consultar y cambiar las aplicaciones por defecto en macOS.
+    swda \(version) — Utility to view and change default applications on macOS.
 
-    Uso:
-      swda getSchemes                       Lista los esquemas de URL conocidos y su app por defecto.
-      swda getUTIs                          Lista los UTIs conocidos y su app por defecto.
-      swda getApps                          Lista las aplicaciones registradas en LaunchServices.
-      swda getHandler <tipo> [--role R] [--all]
-                                            Muestra la app por defecto (o todas las posibles con --all).
-      swda setHandler <tipo> --app <app> [--role R]
-                                            Establece <app> como app por defecto.
+    Usage:
+      swda getSchemes                       List known URL schemes and their default app.
+      swda getUTIs                          List known UTIs and their default app.
+      swda getApps                          List applications registered with LaunchServices.
+      swda getHandler <type> [--role R] [--all]
+                                            Show the default app (or every capable app with --all).
+      swda setHandler <type> --app <app> [--role R]
+                                            Set <app> as the default app.
 
-    <tipo> es uno de:
-      --URL <esquema>        p. ej. --URL mailto
-      --UTI <uti>            p. ej. --UTI public.plain-text
-      --ext <extensión>      p. ej. --ext md (se convierte al UTI correspondiente)
-      --browser | --internet | --web   (http y https)
+    <type> is one of:
+      --URL <scheme>         e.g. --URL mailto
+      --UTI <uti>            e.g. --UTI public.plain-text
+      --ext <extension>      e.g. --ext md (converted to the matching UTI)
+      --browser | --internet | --web   (http and https)
       --mail | --email | --e-mail      (mailto)
       --ftp | --rss | --news
 
-    <app> puede ser un nombre ("Visual Studio Code"), un bundle id (com.microsoft.VSCode)
-    o una ruta a un .app.
+    <app> can be a name ("Visual Studio Code"), a bundle ID (com.microsoft.VSCode),
+    or a path to a .app.
 
-    --role <Viewer|Editor|Shell|All>   Solo para UTIs. Por defecto: All.
+    --role <Viewer|Editor|Shell|All>   UTIs only. Default: All.
     """)
 }
 
-// MARK: - Argumentos
+// MARK: - Arguments
 
 struct Args {
     var command: String
@@ -66,7 +66,7 @@ func parseArgs(_ argv: [String]) -> Args {
     var i = 1
     func value(_ flag: String) -> String {
         i += 1
-        guard i < argv.count else { fail("\(flag) requiere un valor.") }
+        guard i < argv.count else { fail("\(flag) requires a value.") }
         return argv[i]
     }
     while i < argv.count {
@@ -76,7 +76,7 @@ func parseArgs(_ argv: [String]) -> Args {
         case "--uti": args.uti = value(flag)
         case "--ext":
             let ext = value(flag).trimmingCharacters(in: CharacterSet(charactersIn: "."))
-            guard let type = UTType(filenameExtension: ext) else { fail("No se encontró un UTI para la extensión .\(ext)") }
+            guard let type = UTType(filenameExtension: ext) else { fail("No UTI found for extension .\(ext)") }
             args.uti = type.identifier
         case "--browser", "--internet", "--web": args.schemes = ["http", "https"]
         case "--mail", "--email", "--e-mail": args.schemes = ["mailto"]
@@ -86,18 +86,18 @@ func parseArgs(_ argv: [String]) -> Args {
         case "--app", "--application": args.app = value(flag)
         case "--role":
             let name = value(flag)
-            guard let role = Role(name: name) else { fail("Rol inválido: \(name). Usa Viewer, Editor, Shell o All.") }
+            guard let role = Role(name: name) else { fail("Invalid role: \(name). Use Viewer, Editor, Shell, or All.") }
             args.role = role
         case "--all": args.all = true
         case "-h", "--help": printUsage(); exit(0)
-        default: fail("Opción desconocida: \(flag). Usa `swda --help`.")
+        default: fail("Unknown option: \(flag). See `swda --help`.")
         }
         i += 1
     }
     return args
 }
 
-/// Ejecuta una operación asíncrona de LaunchServices y espera su resultado.
+/// Runs an asynchronous LaunchServices operation and waits for its result.
 func waitFor(_ body: (@escaping (Error?) -> Void) -> Void) -> Error? {
     var result: Error?
     var done = false
@@ -106,7 +106,7 @@ func waitFor(_ body: (@escaping (Error?) -> Void) -> Void) -> Error? {
     return result
 }
 
-// MARK: - Comandos
+// MARK: - Commands
 
 func getHandler(_ args: Args) {
     if let uti = args.uti {
@@ -117,7 +117,7 @@ func getHandler(_ args: Args) {
         }
         return
     }
-    guard !args.schemes.isEmpty else { fail("getHandler necesita --URL, --UTI, --ext o un atajo como --browser.") }
+    guard !args.schemes.isEmpty else { fail("getHandler needs --URL, --UTI, --ext, or a shortcut such as --browser.") }
     for scheme in args.schemes {
         if args.all {
             print("\(scheme):")
@@ -130,26 +130,26 @@ func getHandler(_ args: Args) {
 }
 
 func setHandler(_ args: Args) {
-    guard let query = args.app else { fail("setHandler necesita --app <aplicación>.") }
+    guard let query = args.app else { fail("setHandler needs --app <application>.") }
     if query.caseInsensitiveCompare("None") == .orderedSame {
-        fail("\"None\" ya no está soportado: macOS moderno no permite dejar un tipo sin aplicación.")
+        fail("\"None\" is no longer supported: modern macOS doesn't allow leaving a type without an application.")
     }
     let appURL = attempt { try LaunchServices.resolveApp(query) }
 
     if let uti = args.uti {
         if let error = waitFor({ LaunchServices.setDefault(app: appURL, forUTI: uti, role: args.role, completion: $0) }) {
-            fail("No se pudo cambiar el handler de \(uti): \(error.localizedDescription)")
+            fail("Could not change the handler for \(uti): \(error.localizedDescription)")
         }
-        print("El handler por defecto de \(uti) ahora es \(LaunchServices.display(LaunchServices.defaultApp(forUTI: uti, role: args.role))).")
+        print("Default handler for \(uti) is now \(LaunchServices.display(LaunchServices.defaultApp(forUTI: uti, role: args.role))).")
         return
     }
 
-    guard !args.schemes.isEmpty else { fail("setHandler necesita --URL, --UTI, --ext o un atajo como --browser.") }
+    guard !args.schemes.isEmpty else { fail("setHandler needs --URL, --UTI, --ext, or a shortcut such as --browser.") }
     for scheme in args.schemes {
         if let error = waitFor({ LaunchServices.setDefault(app: appURL, forScheme: scheme, completion: $0) }) {
-            fail("No se pudo cambiar el handler de \(scheme): \(error.localizedDescription)")
+            fail("Could not change the handler for \(scheme): \(error.localizedDescription)")
         }
-        print("El handler por defecto de \(scheme) ahora es \(LaunchServices.display(LaunchServices.defaultApp(forScheme: scheme))).")
+        print("Default handler for \(scheme) is now \(LaunchServices.display(LaunchServices.defaultApp(forScheme: scheme))).")
     }
 }
 
@@ -171,5 +171,5 @@ case "getapps":
     }
 case "gethandler": getHandler(args)
 case "sethandler": setHandler(args)
-default: fail("Comando desconocido: \(args.command). Usa `swda --help`.")
+default: fail("Unknown command: \(args.command). See `swda --help`.")
 }

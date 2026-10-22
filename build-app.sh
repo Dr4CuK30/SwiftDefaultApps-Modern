@@ -1,6 +1,6 @@
 #!/bin/bash
-# Compila swda y SwiftDefaultApps.app como binarios universales (arm64 + x86_64).
-# Resultado: ./swda y ./build/SwiftDefaultApps.app
+# Builds swda and SwiftDefaultApps.app as universal binaries (arm64 + x86_64).
+# Output: ./swda, ./build/SwiftDefaultApps.app and the release zips in ./dist
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -24,8 +24,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleIdentifier</key><string>com.swiftdefaultapps.app</string>
     <key>CFBundleExecutable</key><string>SwiftDefaultApps</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>3.0.0</string>
-    <key>CFBundleVersion</key><string>3</string>
+    <key>CFBundleShortVersionString</key><string>3.0.1</string>
+    <key>CFBundleVersion</key><string>4</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -34,7 +34,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-# Firma ad hoc: suficiente para ejecutarla en este Mac.
+# Ad-hoc signature: enough to run it on this Mac.
 codesign --force --sign - "$APP/Contents/Resources/swda"
 codesign --force --sign - "$APP"
 codesign --force --sign - ./swda
@@ -45,4 +45,4 @@ mkdir -p dist
 ditto -c -k --keepParent "$APP" "dist/SwiftDefaultApps-$VERSION.zip"
 ditto -c -k ./swda "dist/swda-$VERSION.zip"
 
-echo "Listo: $(pwd)/$APP, $(pwd)/swda y los zips en $(pwd)/dist"
+echo "Done: $(pwd)/$APP, $(pwd)/swda and the zips in $(pwd)/dist"

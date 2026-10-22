@@ -48,15 +48,13 @@ Three sections in the sidebar:
 
 | Section | What it does |
 | --- | --- |
-| **URL schemes** | Lists every scheme known to LaunchServices along with its current app. Pick another one under "Open with" or via "Other application…". |
-| **File types** | The same for UTIs, with their description and extension. Lets you choose the role (Viewer, Editor, Shell, or All). |
-| **Applications** | For each installed app, shows which schemes and types it declares, which ones it already opens, and a "Use this app" button for the rest. |
+| **URL Schemes** | Lists every scheme known to LaunchServices along with its current app. Pick another one under "Open with" or via "Other Application…". |
+| **File Types** | The same for UTIs, with their description and extension. Lets you choose the role (Viewer, Editor, Shell, or All). |
+| **Applications** | For each installed app, shows which schemes and types it declares, which ones it already opens, and a "Use This App" button for the rest. |
 
 Every list is searchable. The **Reload** button re-reads LaunchServices.
 
 > When you change the browser (`http`/`https`), macOS shows its own confirmation dialog. This is a system restriction.
-
-> The app's interface is currently in Spanish.
 
 ## The CLI: `swda`
 

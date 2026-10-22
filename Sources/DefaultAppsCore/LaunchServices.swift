@@ -1,5 +1,5 @@
-// Lógica compartida por el CLI (swda) y la app (SwiftDefaultApps) para consultar
-// y cambiar las aplicaciones por defecto mediante LaunchServices.
+// Shared logic for the CLI (swda) and the app (SwiftDefaultApps) to query
+// and change default applications through LaunchServices.
 
 import AppKit
 import CoreServices
@@ -35,7 +35,7 @@ public enum Role: String, CaseIterable, Identifiable {
 public enum LaunchServices {
     public static let lsregisterPath = "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 
-    // MARK: Nombres
+    // MARK: Names
 
     public static func appName(_ url: URL) -> String {
         url.deletingPathExtension().lastPathComponent
@@ -50,7 +50,7 @@ public enum LaunchServices {
         return "\(appName(url)) (\(bundleID(url) ?? "?"))"
     }
 
-    /// Descripción legible de un UTI, p. ej. "Markdown Document (.md)".
+    /// Human-readable description of a UTI, e.g. "Markdown Document (.md)".
     public static func describe(uti: String) -> String {
         guard let type = UTType(uti) else { return "" }
         let description = type.localizedDescription ?? ""
@@ -58,7 +58,7 @@ public enum LaunchServices {
         return description.isEmpty ? ".\(ext)" : "\(description) (.\(ext))"
     }
 
-    // MARK: Catálogo (volcado de lsregister)
+    // MARK: Catalog (lsregister dump)
 
     public struct Catalog {
         public let schemes: [String]
@@ -79,7 +79,7 @@ public enum LaunchServices {
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
         do { try process.run() } catch {
-            throw DefaultAppsError("No se pudo ejecutar lsregister: \(error.localizedDescription)")
+            throw DefaultAppsError("Could not run lsregister: \(error.localizedDescription)")
         }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
@@ -116,7 +116,7 @@ public enum LaunchServices {
         return Array(Set(paths)).sorted().map { URL(fileURLWithPath: $0) }
     }
 
-    // MARK: Consultas
+    // MARK: Queries
 
     public static func defaultApp(forScheme scheme: String) -> URL? {
         guard let url = URL(string: "\(scheme):") else { return nil }
@@ -127,7 +127,7 @@ public enum LaunchServices {
         if role == .all, let type = UTType(uti) {
             return NSWorkspace.shared.urlForApplication(toOpen: type)
         }
-        // NSWorkspace no expone roles; LaunchServices sigue resolviéndolos.
+        // NSWorkspace doesn't expose roles; LaunchServices still resolves them.
         guard let id = LSCopyDefaultRoleHandlerForContentType(uti as CFString, role.mask)?.takeRetainedValue() as String? else { return nil }
         return NSWorkspace.shared.urlForApplication(withBundleIdentifier: id)
     }
@@ -146,7 +146,7 @@ public enum LaunchServices {
         return ids.compactMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }
     }
 
-    /// Esquemas y UTIs que una app declara poder abrir en su Info.plist.
+    /// Schemes and UTIs an app declares it can open in its Info.plist.
     public static func claims(of appURL: URL) -> (schemes: [String], utis: [String]) {
         guard let info = Bundle(url: appURL)?.infoDictionary else { return ([], []) }
         let urlTypes = info["CFBundleURLTypes"] as? [[String: Any]] ?? []
@@ -160,7 +160,7 @@ public enum LaunchServices {
         return (Array(Set(schemes)).sorted(), Array(Set(utis)).sorted())
     }
 
-    /// Resuelve un nombre, bundle id o ruta a la URL de un .app.
+    /// Resolves a name, bundle ID, or path to the URL of a .app.
     public static func resolveApp(_ query: String) throws -> URL {
         let expanded = (query as NSString).expandingTildeInPath
         if expanded.hasSuffix(".app"), FileManager.default.fileExists(atPath: expanded) {
@@ -177,25 +177,25 @@ public enum LaunchServices {
         if let match = try catalog().apps.first(where: { appName($0).caseInsensitiveCompare(name) == .orderedSame }) {
             return match
         }
-        throw DefaultAppsError("No se encontró la aplicación \"\(query)\".")
+        throw DefaultAppsError("Application \"\(query)\" not found.")
     }
 
-    // MARK: Cambios
+    // MARK: Changes
 
-    /// Para http/https macOS pide confirmación al usuario en un diálogo del sistema.
+    /// For http/https, macOS asks the user to confirm in a system dialog.
     public static func setDefault(app: URL, forScheme scheme: String, completion: @escaping (Error?) -> Void) {
         NSWorkspace.shared.setDefaultApplication(at: app, toOpenURLsWithScheme: scheme, completion: completion)
     }
 
     public static func setDefault(app: URL, forUTI uti: String, role: Role = .all, completion: @escaping (Error?) -> Void) {
-        guard let type = UTType(uti) else { return completion(DefaultAppsError("\(uti) no es un UTI válido.")) }
+        guard let type = UTType(uti) else { return completion(DefaultAppsError("\(uti) is not a valid UTI.")) }
         if role == .all {
             NSWorkspace.shared.setDefaultApplication(at: app, toOpen: type, completion: completion)
             return
         }
-        guard let id = bundleID(app) else { return completion(DefaultAppsError("La app no tiene bundle identifier.")) }
+        guard let id = bundleID(app) else { return completion(DefaultAppsError("The app has no bundle identifier.")) }
         let status = LSSetDefaultRoleHandlerForContentType(uti as CFString, role.mask, id as CFString)
-        completion(status == noErr ? nil : DefaultAppsError("LaunchServices devolvió el error \(status) para \(uti)."))
+        completion(status == noErr ? nil : DefaultAppsError("LaunchServices returned error \(status) for \(uti)."))
     }
 
     public static func setDefault(app: URL, forScheme scheme: String) async throws {
