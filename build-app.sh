@@ -12,6 +12,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN/SwiftDefaultApps" "$APP/Contents/MacOS/SwiftDefaultApps"
 cp "$BIN/swda" "$APP/Contents/Resources/swda"
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp "$BIN/swda" ./swda
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
@@ -23,6 +24,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleDisplayName</key><string>SwiftDefaultApps</string>
     <key>CFBundleIdentifier</key><string>com.swiftdefaultapps.app</string>
     <key>CFBundleExecutable</key><string>SwiftDefaultApps</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>3.0.1</string>
     <key>CFBundleVersion</key><string>4</string>

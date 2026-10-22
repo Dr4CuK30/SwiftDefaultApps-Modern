@@ -94,6 +94,8 @@ Sources/
   DefaultAppsCore/   Shared LaunchServices logic
   swda/              CLI
   SwiftDefaultApps/  SwiftUI app
+Resources/           App icon (AppIcon.icns and its 1024 px source PNG)
+Scripts/make-icon.swift  Redraws the icon: swift Scripts/make-icon.swift
 build-app.sh         Builds both as universal binaries, assembles the .app and the release zips
 ```
 
